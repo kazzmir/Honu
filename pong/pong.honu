@@ -1,0 +1,225 @@
+#lang honu
+
+require prefix allegro_ racket_allegro_5;
+
+class Pallet(x y height width speed keyup keydown color){
+  var moving = 0
+  draw(){
+    allegro_draw_filled_rounded_rectangle(x, y, x + width, y + height, 6, 6, color)
+    allegro_draw_filled_rounded_rectangle(x+2, y+2, x + width/2, y + height-5, 4, 4, allegro_map_rgba_f(0.2,0.2,0.2,0.2))
+  }
+
+  update(){
+    y := y + moving * speed
+    if y < 0 then {
+      y := 0
+    } else {
+      0
+    }
+    var max = allegro_get_display_height(allegro_get_current_display()) - height
+    if y > max then {
+      y := max
+    } else {
+      0
+    }
+  }
+
+  handle_event(event){
+    match event with
+    (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
+      if type = 'KeyDown then {
+        if keycode = keyup then {
+          moving := -1
+        } else {
+          0
+        }
+        if keycode = keydown then {
+          moving := 1
+        } else {
+          0
+        }
+      } else {
+          0
+      }
+      if type = 'KeyUp then {
+        if keycode = keyup or keycode = keydown then {
+          moving := 0
+        } else {
+          0
+        }
+      } else {
+        0
+      }
+    }
+  }
+}
+
+class Ball(x y speed size pallets color){
+  var xdir = 1
+  var ydir = 1
+  draw(){
+    allegro_draw_filled_circle(x + size/2, y + size/2, size/2, color)
+    allegro_draw_filled_circle(x + size/4, y + size/4, size/6, allegro_map_rgb_f(0.8,0.9,0.8))
+  }
+
+  reverseDirection(){
+    xdir := 1 - xdir
+  }
+
+  right(){
+    if xdir = 0 then {
+      1
+    } else {
+      0
+    }
+  }
+
+  up(){
+    if ydir = 0 then {
+      1
+    } else {
+      0
+    }
+  }
+
+  update(){
+    var new_x = x + (xdir - right()) * speed
+    var new_y = y + (up() - ydir) * speed
+    var p = pallets[xdir] #The pallet this ball is flying to
+    0
+
+    // printf("p.x ~a p.width ~a new_x ~a xdir ~a new_y ~a size ~a p.y ~a p.height ~a\n", p.x, p.width, new_x, xdir, new_y, size, p.y, p.height)
+    // printf("p.width is ~a\n", p.width)
+    if ((new_x <= p.x + p.width and xdir = 0) or
+        (new_x + size >= p.x and xdir = 1)) and
+        new_y + size >= p.y and new_y <= p.y + p.height then {
+
+        0
+        #We hit the pallet
+        xdir := (xdir + 1) % 2
+        new_x := x #Reset the x value
+        speed := speed + 0.3 #Increase the difficulty
+    } else {
+      0
+    }
+
+    if new_y < 0 or new_y + size > allegro_get_display_height(allegro_get_current_display()) then {
+        #We hit a wall
+        ydir := (ydir + 1) % 2
+        new_y := y #Reset the y value
+    } else {
+      0
+    }
+    x := new_x
+    y := new_y
+  }
+
+  setX(what){
+    x := what 
+  }
+}
+
+run_main(){
+  printf("Start main\n")
+  allegro_install_system()
+ 
+  var width = 800
+  var height = 600
+
+  # Make lines draw smoother
+  # al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST)
+  # al_set_new_display_option(ALLEGRO_SAMPLES, 4, ALLEGRO_SUGGEST)
+  var display = allegro_create_display(width, height)
+ 
+  allegro_init_primitives_addon()
+  allegro_install_keyboard()
+  allegro_init_image_addon()
+  allegro_init_font_addon()
+  allegro_init_ttf_addon()
+
+  # var font = al_load_font("fixed_font.tga")
+  var font = allegro_load_font("arial.ttf", 20, 0)
+
+  var finished = false
+  var need_redraw = true
+  var FPS = 30
+  var pallet_w = 20
+  var pallet_h = 80
+  var pallet_speed = 5
+  var ball_size = 30
+  var ball_speed = 4
+  var left_player = new Pallet(0, height/2-pallet_h/2, pallet_h, pallet_w, pallet_speed, 'W, 'S, allegro_map_rgb_f(1.0, 0.0, 0.0))
+  var right_player = new Pallet(width-pallet_w, height/2-pallet_h/2, pallet_h, pallet_w, pallet_speed, 'Up, 'Down, allegro_map_rgb_f(0.0,0.0,1.0))
+  var ball = new Ball(width/2, height/2, ball_speed, ball_size, [left_player, right_player], allegro_map_rgb_f(0,1.0,0))
+
+  var timer = allegro_create_timer(1.0/FPS)
+
+  var queue = allegro_create_event_queue()
+  allegro_register_event_source(queue, allegro_get_timer_event_source(timer))
+  allegro_register_event_source(queue, allegro_get_keyboard_event_source())
+  allegro_register_event_source(queue, allegro_get_display_event_source(display))
+
+  allegro_start_timer(timer)
+
+  printf("Running!\n")
+
+  var done = false
+  while not done {
+     // var now = currentMilliseconds()
+     // printf("top ~a\n", currentMilliseconds())
+     
+        if need_redraw and allegro_is_event_queue_empty(queue) then {
+            allegro_clear_to_color(allegro_map_rgb_f(0,0,0))
+            left_player->draw()
+            right_player->draw()
+            ball->draw()
+            if not finished then {
+                allegro_draw_text(font, allegro_map_rgb_f(1,1,1), width/2, 10, 'AlignCenter, "Player 1: use W and S to move, Player 2: use the up and down arrow keys.")
+            } else {
+                allegro_draw_text(font, allegro_map_rgb_f(1,1,1), width/2, 10, 'AlignCenter, "Press R to reset, ESC to exit.")
+            }
+            allegro_flip_display()
+            need_redraw := false
+        } else {
+          5
+        }
+
+    // printf("before ~a\n", currentMilliseconds())
+    var event = allegro_wait_for_event(queue)
+    // printf("after ~a\n", currentMilliseconds())
+
+    match event with
+      (allegro_TimerEvent type source timestamp count error){
+        left_player->update()
+        right_player->update()
+        ball->update()
+        if ball.x + ball.size < 0 or ball.x > width then {
+            ball->setX(width / 2)
+            ball->reverseDirection()
+            // finished := true
+            // allegro_stop_timer(timer)
+        } else {
+          0
+        }
+        need_redraw := true
+      }
+      (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
+        // printf("Pressed ~a\n", keycode)
+        if type = 'KeyChar and keycode = 'Escape then {
+          done := true
+        } else {
+          left_player->handle_event(event)
+          right_player->handle_event(event)
+        }
+      }
+
+    /*
+    var later = currentMilliseconds()
+    printf("Took ~ams\n", later - now)
+    */
+  }
+
+  allegro_uninstall_system()
+}
+
+run_main()

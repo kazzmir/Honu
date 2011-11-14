@@ -8,9 +8,14 @@ macro when (then){ condition:expression then body:expression }{
 
 class Pallet(x y height width speed keyup keydown color){
   var moving = 0
+  var score = 0
   draw(){
     allegro_draw_filled_rounded_rectangle(x, y, x + width, y + height, 6, 6, color)
     allegro_draw_filled_rounded_rectangle(x+2, y+2, x + width/2, y + height-5, 4, 4, allegro_map_rgba_f(0.2,0.2,0.2,0.2))
+  }
+
+  die(){
+    score := score - 100
   }
 
   update(){
@@ -21,6 +26,11 @@ class Pallet(x y height width speed keyup keydown color){
     var max = allegro_get_display_height(allegro_get_current_display()) - height
     when y > max then {
       y := max
+    }
+    if moving = 0 then {
+      score := score + 0.3
+    } else {
+      score := score - 0.4
     }
   }
 
@@ -105,6 +115,10 @@ class Ball(x y speed size pallets color){
   }
 }
 
+twoPlaces(x){
+  integer(x * 100) / 100.0 + 0.0
+}
+
 run_main(){
   printf("Start main\n")
   allegro_install_system()
@@ -161,6 +175,8 @@ run_main(){
             ball->draw()
             if not finished then {
                 allegro_draw_text(font, allegro_map_rgb_f(1,1,1), width/2, 10, 'AlignCenter, "Player 1: use W and S to move, Player 2: use the up and down arrow keys.")
+                allegro_draw_text(font, allegro_map_rgb_f(1, 1, 1), 1, height - 20, 'AlignLeft, format("Score: ~a", twoPlaces(left_player.score)))
+                allegro_draw_text(font, allegro_map_rgb_f(1, 1, 1), width - 10, height - 20, 'AlignRight, format("Score: ~a", twoPlaces(right_player.score)))
             } else {
                 allegro_draw_text(font, allegro_map_rgb_f(1,1,1), width/2, 10, 'AlignCenter, "Press R to reset, ESC to exit.")
             }
@@ -178,6 +194,8 @@ run_main(){
         right_player->update()
         ball->update()
         when ball.x + ball.size < 0 or ball.x > width then {
+            when ball.x + ball.size < 0 then left_player->die()
+            when ball.x > width then right_player->die()
             ball->setX(width / 2)
             ball->reverseDirection()
             // finished := true

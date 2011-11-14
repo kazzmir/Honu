@@ -2,6 +2,10 @@
 
 require prefix allegro_ racket_allegro_5;
 
+macro when (then){ condition:expression then body:expression }{
+  syntax(if condition then body else { 0 })
+}
+
 class Pallet(x y height width speed keyup keydown color){
   var moving = 0
   draw(){
@@ -11,47 +15,32 @@ class Pallet(x y height width speed keyup keydown color){
 
   update(){
     y := y + moving * speed
-    if y < 0 then {
+    when y < 0 then {
       y := 0
-    } else {
-      0
     }
     var max = allegro_get_display_height(allegro_get_current_display()) - height
-    if y > max then {
+    when y > max then {
       y := max
-    } else {
-      0
     }
   }
 
   handle_event(event){
     match event with
     (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
-      if type = 'KeyDown then {
-        if keycode = keyup then {
+      when type = 'KeyDown then {
+        when keycode = keyup then {
           moving := -1
-        } else {
-          0
         }
-        if keycode = keydown then {
+        when keycode = keydown then {
           moving := 1
-        } else {
-          0
         }
-      } else {
-          0
       }
-      if type = 'KeyUp then {
-        if keycode = keyup or keycode = keydown then {
+
+      when type = 'KeyUp and (keycode = keyup or keycode = keydown) then {
           moving := 0
-        } else {
-          0
         }
-      } else {
-        0
       }
     }
-  }
 }
 
 class Ball(x y speed size pallets color){
@@ -90,26 +79,23 @@ class Ball(x y speed size pallets color){
 
     // printf("p.x ~a p.width ~a new_x ~a xdir ~a new_y ~a size ~a p.y ~a p.height ~a\n", p.x, p.width, new_x, xdir, new_y, size, p.y, p.height)
     // printf("p.width is ~a\n", p.width)
-    if ((new_x <= p.x + p.width and xdir = 0) or
-        (new_x + size >= p.x and xdir = 1)) and
-        new_y + size >= p.y and new_y <= p.y + p.height then {
+    when ((new_x <= p.x + p.width and xdir = 0) or
+          (new_x + size >= p.x and xdir = 1)) and
+         new_y + size >= p.y and new_y <= p.y + p.height then {
 
         0
         #We hit the pallet
         xdir := (xdir + 1) % 2
         new_x := x #Reset the x value
         speed := speed + 0.3 #Increase the difficulty
-    } else {
-      0
     }
 
-    if new_y < 0 or new_y + size > allegro_get_display_height(allegro_get_current_display()) then {
+    when new_y < 0 or new_y + size > allegro_get_display_height(allegro_get_current_display()) then {
         #We hit a wall
         ydir := (ydir + 1) % 2
         new_y := y #Reset the y value
-    } else {
-      0
     }
+
     x := new_x
     y := new_y
   }
@@ -168,7 +154,7 @@ run_main(){
      // var now = currentMilliseconds()
      // printf("top ~a\n", currentMilliseconds())
      
-        if need_redraw and allegro_is_event_queue_empty(queue) then {
+        when need_redraw and allegro_is_event_queue_empty(queue) then {
             allegro_clear_to_color(allegro_map_rgb_f(0,0,0))
             left_player->draw()
             right_player->draw()
@@ -180,8 +166,6 @@ run_main(){
             }
             allegro_flip_display()
             need_redraw := false
-        } else {
-          5
         }
 
     // printf("before ~a\n", currentMilliseconds())
@@ -193,13 +177,11 @@ run_main(){
         left_player->update()
         right_player->update()
         ball->update()
-        if ball.x + ball.size < 0 or ball.x > width then {
+        when ball.x + ball.size < 0 or ball.x > width then {
             ball->setX(width / 2)
             ball->reverseDirection()
             // finished := true
             // allegro_stop_timer(timer)
-        } else {
-          0
         }
         need_redraw := true
       }

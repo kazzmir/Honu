@@ -1,0 +1,11 @@
+Get the racket-allegro bindings
+
+  $ git clone git://github.com/kazzmir/racket-allegro-5.git
+
+Follow the directions in racket-allegro-5 and set it up. Then link it with raco.
+
+  $ raco link racket-allegro-5
+
+Then run pong.honu
+
+  $ racket pong.honu

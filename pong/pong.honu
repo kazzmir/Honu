@@ -27,6 +27,7 @@ class Pallet(x y height width speed keyup keydown color){
     when y > max then {
       y := max
     }
+
     if moving = 0 then {
       score := score + 0.3
     } else {
@@ -85,7 +86,6 @@ class Ball(x y speed size pallets color){
     var new_x = x + (xdir - right()) * speed
     var new_y = y + (up() - ydir) * speed
     var p = pallets[xdir] #The pallet this ball is flying to
-    0
 
     // printf("p.x ~a p.width ~a new_x ~a xdir ~a new_y ~a size ~a p.y ~a p.height ~a\n", p.x, p.width, new_x, xdir, new_y, size, p.y, p.height)
     // printf("p.width is ~a\n", p.width)
@@ -93,7 +93,6 @@ class Ball(x y speed size pallets color){
           (new_x + size >= p.x and xdir = 1)) and
          new_y + size >= p.y and new_y <= p.y + p.height then {
 
-        0
         #We hit the pallet
         xdir := (xdir + 1) % 2
         new_x := x #Reset the x value
@@ -142,7 +141,7 @@ run_main(){
 
   var finished = false
   var need_redraw = true
-  var FPS = 30
+  var FPS = 40
   var pallet_w = 20
   var pallet_h = 80
   var pallet_speed = 5
@@ -163,31 +162,26 @@ run_main(){
 
   printf("Running!\n")
 
+  draw(){
+    allegro_clear_to_color(allegro_map_rgb_f(0,0,0))
+    left_player->draw()
+    right_player->draw()
+    ball->draw()
+    if not finished then {
+        allegro_draw_text(font, allegro_map_rgb_f(1,1,1), width/2, 10, 'AlignCenter, "Player 1: use W and S to move, Player 2: use the up and down arrow keys.")
+        allegro_draw_text(font, allegro_map_rgb_f(1, 1, 1), 1, height - 20, 'AlignLeft, format("Score: ~a", twoPlaces(left_player.score)))
+        allegro_draw_text(font, allegro_map_rgb_f(1, 1, 1), width - 10, height - 20, 'AlignRight, format("Score: ~a", twoPlaces(right_player.score)))
+    } else {
+        allegro_draw_text(font, allegro_map_rgb_f(1,1,1), width/2, 10, 'AlignCenter, "Press R to reset, ESC to exit.")
+    }
+    allegro_flip_display()
+
+  }
+
+  # When true the game will end
   var done = false
-  while not done {
-     // var now = currentMilliseconds()
-     // printf("top ~a\n", currentMilliseconds())
-     
-        when need_redraw and allegro_is_event_queue_empty(queue) then {
-            allegro_clear_to_color(allegro_map_rgb_f(0,0,0))
-            left_player->draw()
-            right_player->draw()
-            ball->draw()
-            if not finished then {
-                allegro_draw_text(font, allegro_map_rgb_f(1,1,1), width/2, 10, 'AlignCenter, "Player 1: use W and S to move, Player 2: use the up and down arrow keys.")
-                allegro_draw_text(font, allegro_map_rgb_f(1, 1, 1), 1, height - 20, 'AlignLeft, format("Score: ~a", twoPlaces(left_player.score)))
-                allegro_draw_text(font, allegro_map_rgb_f(1, 1, 1), width - 10, height - 20, 'AlignRight, format("Score: ~a", twoPlaces(right_player.score)))
-            } else {
-                allegro_draw_text(font, allegro_map_rgb_f(1,1,1), width/2, 10, 'AlignCenter, "Press R to reset, ESC to exit.")
-            }
-            allegro_flip_display()
-            need_redraw := false
-        }
 
-    // printf("before ~a\n", currentMilliseconds())
-    var event = allegro_wait_for_event(queue)
-    // printf("after ~a\n", currentMilliseconds())
-
+  logic(event){
     match event with
       (allegro_TimerEvent type source timestamp count error){
         left_player->update()
@@ -212,11 +206,15 @@ run_main(){
           right_player->handle_event(event)
         }
       }
+  }
 
-    /*
-    var later = currentMilliseconds()
-    printf("Took ~ams\n", later - now)
-    */
+  while not done {
+    when need_redraw and allegro_is_event_queue_empty(queue) then {
+      draw()
+      need_redraw := false
+    }
+
+    logic(allegro_wait_for_event(queue))
   }
 
   allegro_uninstall_system()

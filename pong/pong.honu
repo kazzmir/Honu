@@ -54,10 +54,20 @@ class Pallet(x y height width speed keyup keydown color){
     }
 }
 
+alpha(color, level){
+  var red, green, blue = allegro_unmap_rgb_f(color)
+  allegro_map_rgba_f(red * level, green * level, blue * level, level)
+}
+
 class Ball(x y speed size pallets color){
   var xdir = 1
   var ydir = 1
+
+  var last_x = 0
+  var last_y = 0
+
   draw(){
+    allegro_draw_filled_circle(last_x + size/2, last_y + size/2, size/2, alpha(color, 0.5))
     allegro_draw_filled_circle(x + size/2, y + size/2, size/2, color)
     allegro_draw_filled_circle(x + size/4, y + size/4, size/6, allegro_map_rgb_f(0.8,0.9,0.8))
   }
@@ -83,6 +93,9 @@ class Ball(x y speed size pallets color){
   }
 
   update(){
+    last_x := x
+    last_y := y
+
     var new_x = x + (xdir - right()) * speed
     var new_y = y + (up() - ydir) * speed
     var p = pallets[xdir] #The pallet this ball is flying to

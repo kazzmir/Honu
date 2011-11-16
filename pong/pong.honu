@@ -253,6 +253,9 @@ run_main(){
           right_player->handle_event(event)
         }
       }
+      else{
+        void()
+      }
   }
 
   while not done {

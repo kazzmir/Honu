@@ -2,10 +2,6 @@
 
 require prefix allegro_ racket_allegro_5;
 
-macro when (then){ condition:expression then body:expression }{
-  syntax(if condition then body else { void() })
-}
-
 class Pallet(x, y, height, width, speed, keyup, keydown, color){
   var moving = 0
   var score = 0

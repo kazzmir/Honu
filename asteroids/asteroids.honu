@@ -1,0 +1,67 @@
+#lang honu
+
+require prefix allegro_ racket_allegro_5;
+
+main(){
+  allegro_install_system()
+ 
+  allegro_init_primitives_addon()
+  allegro_install_keyboard()
+  allegro_init_image_addon()
+  allegro_init_font_addon()
+  allegro_init_ttf_addon()
+
+  var FPS = 40
+  var width = 800
+  var height = 600
+  
+  var display = allegro_create_display(width, height)
+  
+  var timer = allegro_create_timer(1.0/FPS)
+  var queue = allegro_create_event_queue()
+  
+  allegro_register_event_source(queue, allegro_get_timer_event_source(timer))
+  allegro_register_event_source(queue, allegro_get_keyboard_event_source())
+  allegro_register_event_source(queue, allegro_get_display_event_source(display))
+  
+  allegro_start_timer(timer)
+
+  var need_redraw = false
+  var done = false
+
+  draw(){
+    void()
+  }
+
+  logic(event){
+    match event with
+      (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
+        // printf("Pressed ~a\n", keycode)
+        if type = 'KeyChar and keycode = 'Escape then {
+          done := true
+        } else {
+          void()
+          /*
+          left_player->handle_event(event)
+          right_player->handle_event(event)
+          */
+        }
+      }
+      else{
+        void()
+      }
+  }
+
+  while not done {
+    when need_redraw and allegro_is_event_queue_empty(queue) then {
+      draw()
+      need_redraw := false
+    }
+
+    logic(allegro_wait_for_event(queue))
+  }
+
+  allegro_uninstall_system()
+}
+
+main()

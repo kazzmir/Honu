@@ -2,6 +2,97 @@
 
 require prefix allegro_ racket_allegro_5;
 
+randomReal(low, high){
+  random((high - low) * 100) / 100 + low
+}
+
+var pi = 3.14159
+
+class Asteroid(x, y, size, angle, speed){
+  draw(){
+    allegro_draw_filled_circle(x, y, size, allegro_map_rgb_f(255, 0, 0))
+  }
+
+  act(){
+    x := x + cos(angle * pi / 180) * speed
+    y := y + sin(angle * pi / 180) * speed
+  }
+}
+
+screenWidth(){
+  allegro_get_display_width(allegro_get_current_display())
+}
+
+screenHeight(){
+  allegro_get_display_height(allegro_get_current_display())
+}
+
+class World(){
+  var asteroids = []
+
+  makeAsteroid(){
+    new Asteroid(randomReal(0, screenWidth()), randomReal(0, screenHeight()), randomReal(10, 50), randomReal(0, 360), randomReal(1, 4))
+  }
+
+  constructor(){
+    asteroids := [makeAsteroid(): i <- 0 to 5]
+  }
+
+  draw(){
+    allegro_draw_filled_rectangle(0, 0, screenWidth(), screenHeight(), allegro_map_rgb_f(0, 0, 0))
+    for asteroid in asteroids do {
+      asteroid->draw()
+    }
+  }
+
+  act(){
+    for asteroid in asteroids do {
+      asteroid->act()
+    }
+  }
+}
+
+struct Player {x, y, angle, speed, shots}
+
+run_game(queue){
+  var need_redraw = false
+  var done = false
+  var world = new World()
+  world->constructor()
+
+  draw(){
+    world->draw()
+    allegro_flip_display()
+  }
+
+  logic(event){
+    match event with
+      (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
+        // printf("Pressed ~a\n", keycode)
+        if type = 'KeyChar and keycode = 'Escape then {
+          done := true
+        } else {
+          void()
+        }
+      }
+      (allegro_TimerEvent type source timestamp count error){
+        world->act()
+        need_redraw := true
+      } else {
+        void()
+      }
+  }
+
+  while not done {
+    when need_redraw and allegro_is_event_queue_empty(queue) then {
+      draw()
+      need_redraw := false
+    }
+
+    logic(allegro_wait_for_event(queue))
+  }
+}
+
 main(){
   allegro_install_system()
  
@@ -26,41 +117,8 @@ main(){
   
   allegro_start_timer(timer)
 
-  var need_redraw = false
-  var done = false
-
-  draw(){
-    void()
-  }
-
-  logic(event){
-    match event with
-      (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
-        // printf("Pressed ~a\n", keycode)
-        if type = 'KeyChar and keycode = 'Escape then {
-          done := true
-        } else {
-          void()
-          /*
-          left_player->handle_event(event)
-          right_player->handle_event(event)
-          */
-        }
-      }
-      else{
-        void()
-      }
-  }
-
-  while not done {
-    when need_redraw and allegro_is_event_queue_empty(queue) then {
-      draw()
-      need_redraw := false
-    }
-
-    logic(allegro_wait_for_event(queue))
-  }
-
+  run_game(queue)
+  
   allegro_uninstall_system()
 }
 

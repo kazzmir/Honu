@@ -147,12 +147,6 @@ twoPlaces(x){
   integer(x * 100) / 100.0 + 0.0
 }
 
-elements(n){
-  for x = 1 to n do {
-    x
-  }
-}
-
 run_main(){
   printf("Start main\n")
   allegro_install_system()
@@ -197,7 +191,7 @@ run_main(){
 
   printf("Running!\n")
 
-  var stars = [new Star(random(width), random(height), 0, random(5) / 10 + 0.1): x <- elements(100)]
+  var stars = [new Star(random(width), random(height), 0, random(5) / 10 + 0.1): x <- 0 to 100]
 
   draw(){
     allegro_clear_to_color(allegro_map_rgb_f(0,0,0))

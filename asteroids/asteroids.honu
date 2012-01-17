@@ -3,7 +3,7 @@
 require prefix allegro_ racket_allegro_5;
 
 randomReal(low, high){
-  random((high - low) * 100) / 100 + low
+  random(int((high - low) * 100)) / 100 + low
 }
 
 color(r, g, b){
@@ -21,8 +21,34 @@ screenHeight(){
 }
 
 class Asteroid(x, y, size, angle, speed){
+  var life = 1
   draw(){
     allegro_draw_filled_circle(x, y, size, color(1, 0, 0))
+  }
+
+  distance(x1, y1, x2, y2){
+    sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
+  }
+
+  touch(x, y, radius){
+    distance(x, y, this.x, this.y) < radius + size
+  }
+
+  explode(){
+    make(){
+        new Asteroid(x + randomReal(-size / 2, size / 2), y + randomReal(-size / 2, size / 2), size / 2 + randomReal(-2, 2), random(360), randomReal(1, 3))
+    }
+
+    if size > 15 then {
+      var max = random(3) + 2;
+      [make(): i <- 0 to max]
+    } else {
+      []
+    }
+  }
+
+  hit(){
+    life := life - 1
   }
 
   act(){
@@ -51,6 +77,8 @@ class Player(x, y, angle, speed, shots){
   var goLeft = false
   var goRight = false
   var goForward = false
+  var goBackward = false
+  var doShoot = false
 
   drawShip(){
     var size = 18
@@ -76,10 +104,10 @@ class Player(x, y, angle, speed, shots){
     angle := angle + turnSpeed
   }
 
-  forward(){
+  forward(direction){
     var max = 3
-    dx := dx + cos(angle * pi / 180) * speed
-    dy := dy + sin(angle * pi / 180) * speed
+    dx := dx + cos(angle * pi / 180) * speed * direction
+    dy := dy + sin(angle * pi / 180) * speed * direction
     when dx > max then {
       dx := max
     }
@@ -94,11 +122,16 @@ class Player(x, y, angle, speed, shots){
     }
   }
 
-  act(){
+  act(world){
 
     when goLeft then turnLeft()
     when goRight then turnRight()
-    when goForward then forward()
+    when goForward then forward(1)
+    when goBackward then forward(-1)
+    when doShoot then {
+      world->addBullet(x, y, angle, sqrt(dx * dx + dy * dy) + 1)
+      doShoot := false
+    }
 
     x := x + dx
     y := y + dy
@@ -107,6 +140,34 @@ class Player(x, y, angle, speed, shots){
   handleInput(event){
     match event with
       (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
+
+        macro direction(){ what:identifier good:expression bad:expression }{
+          syntax(
+            if type = 'KeyDown and keycode = good then {
+              what := true
+            } else if type = 'KeyUp and keycode = good then {
+              what := false
+            } else if type = 'KeyDown and keycode = bad then {
+              what := false
+            } else {
+            })
+        }
+
+        direction goLeft 'Left 'Right
+        direction goRight 'Right 'Left
+        direction goForward 'Up 'Down
+        direction goBackward 'Down 'Up
+
+        when type = 'KeyDown and keycode = 'Space then {
+          doShoot := true
+        }
+
+        /* Good example of where macros can help. The below code is refactored into
+         * the macro above. A function could not be used because the variables being
+         * modified are not boxed. 
+         */
+
+        /*
         if type = 'KeyDown and keycode = 'Left then {
           goLeft := true
           goRight := false
@@ -119,16 +180,44 @@ class Player(x, y, angle, speed, shots){
           goRight := false
         } else if type = 'KeyDown and keycode = 'Up then {
           goForward := true
+          goBackward := false
         } else if type = 'KeyUp and keycode = 'Up then {
           goForward := false
+        } else if type = 'KeyDown and keycode = 'Down then {
+          goForward := false
+          goBackward := true
+        } else if type = 'KeyDown and keycode = 'Up then {
+          goBackward := false
         } else {
         }
+        */
      }
+  }
+}
+
+class Bullet(x, y, angle, speed){
+  var radius = 4
+  var alive = true
+  draw(){
+    allegro_draw_filled_circle(x, y, radius, color(1, 1, 0))
+  }
+
+  hit(){
+    alive := false
+  }
+
+  getX(){ x }
+  getY(){ y }
+
+  act(){
+    x := x + cos(angle * pi / 180) * speed
+    y := y + sin(angle * pi / 180) * speed
   }
 }
 
 class World(player){
   var asteroids = []
+  var bullets = []
 
   makeAsteroid(){
     new Asteroid(randomReal(0, screenWidth()), randomReal(0, screenHeight()), randomReal(10, 50), randomReal(0, 360), randomReal(1, 3))
@@ -143,15 +232,50 @@ class World(player){
     for asteroid in asteroids do {
       asteroid->draw()
     }
+    for bullet in bullets do {
+      bullet->draw()
+    }
     player->draw()
   }
 
+  addBullet(x, y, angle, speed){
+    bullets := new Bullet(x, y, angle, speed) :: bullets
+  }
+
   act(){
+    asteroids := [asteroid where asteroid.life > 0: asteroid <- asteroids]
     for asteroid in asteroids do {
       asteroid->act()
     }
 
-    player->act()
+    for bullet in bullets do {
+      bullet->act()
+    }
+
+    var more_asteroids = []
+    for bullet in bullets do {
+      for asteroid in asteroids do {
+        when bullet.alive and asteroid->touch(bullet.x, bullet.y, bullet.radius) then {
+          asteroid->hit()
+          when asteroid.life = 0 then {
+            more_asteroids := append(more_asteroids, asteroid->explode())
+          }
+          bullet->hit()
+        }
+      }
+    }
+
+    asteroids := append(asteroids, more_asteroids)
+
+    alive?(bullet){
+      bullet.alive and
+      bullet->getX() > 0 and bullet->getX() < screenWidth() and
+      bullet->getY() > 0 and bullet->getY() < screenHeight()
+    }
+
+    bullets := [bullet where alive?(bullet): bullet <- bullets]
+
+    player->act(this)
   }
 }
 

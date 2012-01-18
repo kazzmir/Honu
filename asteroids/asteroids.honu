@@ -3,7 +3,7 @@
 require prefix allegro_ racket_allegro_5;
 
 randomReal(low, high){
-  random(int((high - low) * 100)) / 100 + low
+  random(integer((high - low) * 100)) / 100 + low
 }
 
 color(r, g, b){
@@ -137,6 +137,7 @@ class Player(x, y, angle, speed, shots){
   var turnSpeed = 3
   var dx = 0
   var dy = 0
+  var score = 0
 
   var goLeft = false
   var goRight = false
@@ -170,6 +171,10 @@ class Player(x, y, angle, speed, shots){
     angle := angle + turnSpeed
   }
 
+  gainScore(amount){
+    score := score + amount
+  }
+
   forward(direction){
     var max = 3
     dx := dx + cos(angle * pi / 180) * speed * direction
@@ -195,7 +200,6 @@ class Player(x, y, angle, speed, shots){
     when goForward then forward(1)
     when goBackward then forward(-1)
     when doShoot then {
-      // world->addBullet(x, y, angle, sqrt(dx * dx + dy * dy) + 1)
       world->addBullet(x + cos(angle * pi / 180) * size,
                        y + sin(angle * pi / 180) * size, angle, 5)
       allegro_play_sample(shootSound)
@@ -387,10 +391,12 @@ class World(player){
       for asteroid in asteroids do {
         when bullet.alive and asteroid->touch(bullet.x, bullet.y, bullet.radius, sprites) then {
           asteroid->hit()
+          player->gainScore(10)
           when asteroid.life = 0 then {
             more_asteroids := append(more_asteroids, asteroid->explode())
             allegro_play_sample(asteroidExplodeSound)
             explodes := makeLargeExplode(asteroid.x, asteroid.y) :: explodes
+            player->gainScore(asteroid.size * 100)
           }
           bullet->hit()
           explodes := makeSmallExplode(bullet.x, bullet.y) :: explodes
@@ -451,7 +457,7 @@ class SpriteManager(){
   }
     
   get(from, ticks){
-    from[int(ticks) % length(from)]
+    from[integer(ticks) % length(from)]
   }
 
   getShip(){
@@ -459,10 +465,10 @@ class SpriteManager(){
   }
 
   getExplode(sprites, ticks){
-    if int(ticks) >= length(sprites) then {
+    if integer(ticks) >= length(sprites) then {
       false
     } else {
-      sprites[int(ticks)]
+      sprites[integer(ticks)]
     }
   }
 
@@ -505,6 +511,10 @@ class SpriteManager(){
   }
 }
 
+twoPlaces(x){
+  integer(x * 100) / 100.0 + 0.0
+}
+
 run_game(queue){
   var need_redraw = false
   var done = false
@@ -513,10 +523,7 @@ run_game(queue){
   world->constructor()
   var sprites = new SpriteManager()
 
-  draw(){
-    world->draw(sprites)
-    allegro_flip_display()
-  }
+  var font = allegro_load_font("arial.ttf", 20, 0)
 
   var fpsTimer = allegro_create_timer(0.5)
   allegro_register_event_source(queue, allegro_get_timer_event_source(fpsTimer))
@@ -524,6 +531,15 @@ run_game(queue){
 
   var fpsCount = 0
   var lastTime = currentMilliseconds()
+  var fps = 0
+
+  draw(){
+    world->draw(sprites)
+    allegro_draw_text(font, color(1,1,1), screenWidth(), 10, 'AlignRight, format("FPS ~a", twoPlaces(fps)))
+    allegro_draw_text(font, color(1,1,1), 0, 10, 'AlignLeft, format("Score: ~a", player.score))
+    allegro_flip_display()
+  }
+
 
   logic(event){
     match event with
@@ -539,7 +555,7 @@ run_game(queue){
         // printf("Source ~a fps source ~a\n", source, fpsTimer)
         if allegro_same_pointer(source, fpsTimer) then {
           var now = currentMilliseconds()
-          // printf("Fps: ~a\n", fpsCount / ((now - lastTime) / 1000))
+          fps := fpsCount / ((now - lastTime) / 1000)
           fpsCount := 0
           lastTime := now
         } else {

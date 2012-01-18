@@ -20,16 +20,20 @@ screenHeight(){
   allegro_get_display_height(allegro_get_current_display())
 }
 
+drawCenter(bitmap, x, y){
+  allegro_draw_scaled_rotated_bitmap(bitmap, allegro_get_bitmap_width(bitmap) / 2, allegro_get_bitmap_height(bitmap) / 2, x, y, 1, 1, 0, 0)
+}
+
+drawCenterRotated(bitmap, x, y, angle){
+  allegro_draw_scaled_rotated_bitmap(bitmap, allegro_get_bitmap_width(bitmap) / 2, allegro_get_bitmap_height(bitmap) / 2, x, y, 1, 1, angle * pi / 180, 0)
+}
+
 class Asteroid(x, y, size, angle, speed){
   var life = 1
   var ticks = random(100)
   draw(sprites){
     // allegro_draw_bitmap(currentSprite(sprites), x, y, 0)
     drawCenter(currentSprite(sprites), x, y)
-  }
-    
-  drawCenter(bitmap, x, y){
-    allegro_draw_scaled_rotated_bitmap(bitmap, allegro_get_bitmap_width(bitmap) / 2, allegro_get_bitmap_height(bitmap) / 2, x, y, 1, 1, 0, 0)
   }
 
   currentSprite(sprites){
@@ -118,8 +122,8 @@ class Player(x, y, angle, speed, shots){
     allegro_draw_filled_triangle(x1, y1, x2, y2, x3, y3, color(0, 1, 0))
   }
 
-  draw(){
-    drawShip()
+  draw(sprites){
+    drawCenterRotated(sprites->getShip(), x, y, angle + 90)
   }
 
   turnLeft(){
@@ -265,7 +269,7 @@ class World(player){
     for bullet in bullets do {
       bullet->draw()
     }
-    player->draw()
+    player->draw(sprites)
   }
 
   addBullet(x, y, angle, speed){
@@ -348,6 +352,10 @@ class SpriteManager(){
     
   get(from, ticks){
     from[int(ticks) % length(from)]
+  }
+
+  getShip(){
+    ship
   }
 
   getAsteroidLarge(ticks){

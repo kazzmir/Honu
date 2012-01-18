@@ -24,12 +24,42 @@ screenHeight(){
   allegro_get_display_height(allegro_get_current_display())
 }
 
+screen(){
+  allegro_get_backbuffer(allegro_get_current_display())
+}
+
 drawCenter(bitmap, x, y){
   allegro_draw_scaled_rotated_bitmap(bitmap, allegro_get_bitmap_width(bitmap) / 2, allegro_get_bitmap_height(bitmap) / 2, x, y, 1, 1, 0, 0)
 }
 
 drawCenterRotated(bitmap, x, y, angle){
   allegro_draw_scaled_rotated_bitmap(bitmap, allegro_get_bitmap_width(bitmap) / 2, allegro_get_bitmap_height(bitmap) / 2, x, y, 1, 1, angle * pi / 180, 0)
+}
+
+class Explosion(x, y, size){
+  var ticks = 0
+  draw(sprites){
+    var bitmap = currentSprite(sprites)
+    when bitmap != false then {
+      drawCenter(bitmap, x, y)
+    }
+  }
+
+  currentSprite(sprites){
+    if size = 2 then {
+      sprites->getExplosionLarge(ticks)
+    } else {
+      sprites->getExplosionSmall(ticks)
+    }
+  }
+
+  dead?(sprites){
+    currentSprite(sprites) = false
+  }
+
+  act(){
+    ticks := ticks + 1
+  }
 }
 
 class Asteroid(x, y, size, angle, speed){
@@ -174,6 +204,19 @@ class Player(x, y, angle, speed, shots){
 
     x := x + dx
     y := y + dy
+
+    when x < 0 then {
+      x := screenWidth()
+    }
+    when x > screenWidth() then {
+      x := 0
+    }
+    when y < 0 then {
+      y := screenHeight()
+    }
+    when y > screenHeight() then {
+      y := 0
+    }
   }
 
   handleInput(event){
@@ -254,10 +297,18 @@ class Bullet(x, y, angle, speed){
   }
 }
 
+class Star(x, y, brightness){
+  var shine = color(brightness, brightness, brightness)
+  draw(){
+    allegro_draw_filled_circle(x, y, 1, shine)
+  }
+}
+
 class World(player){
   var asteroids = []
   var bullets = []
-  // var stars = generateStars()
+  var stars = generateStars()
+  var explodes = []
 
   var asteroidExplodeSound = loadSound("data/sounds/explode.wav")
   var bulletHitSound = loadSound("data/sounds/pop.wav")
@@ -270,11 +321,32 @@ class World(player){
     asteroids := [makeAsteroid(): i <- 0 to 5]
   }
 
+  generateStars(){
+    make(){
+      new Star(randomReal(0, screenWidth()), randomReal(0, screenHeight()), randomReal(0, 1))
+    }
+
+    // [make(): i <- 0 to screenWidth() * screenHeight() / 1000]
+    // 400: 30
+    // 300: 38
+    // 200: 40
+    [make(): i <- 0 to 200]
+  }
+
+  draw_stars(){
+    for star in stars do {
+      star->draw()
+    }
+  }
+
   draw(sprites){
     allegro_draw_filled_rectangle(0, 0, screenWidth(), screenHeight(), color(0, 0, 0))
-    // draw_stars()
+    draw_stars()
     for asteroid in asteroids do {
       asteroid->draw(sprites)
+    }
+    for explode in explodes do {
+      explode->draw(sprites)
     }
     for bullet in bullets do {
       bullet->draw()
@@ -284,6 +356,14 @@ class World(player){
 
   addBullet(x, y, angle, speed){
     bullets := new Bullet(x, y, angle, speed) :: bullets
+  }
+
+  makeSmallExplode(x, y){
+    new Explosion(x, y, 1)
+  }
+
+  makeLargeExplode(x, y){
+    new Explosion(x, y, 2)
   }
 
   act(sprites){
@@ -296,6 +376,12 @@ class World(player){
       bullet->act()
     }
 
+    for explode in explodes do {
+      explode->act()
+    }
+
+    explodes := [explode where not explode->dead?(sprites): explode <- explodes]
+
     var more_asteroids = []
     for bullet in bullets do {
       for asteroid in asteroids do {
@@ -304,8 +390,10 @@ class World(player){
           when asteroid.life = 0 then {
             more_asteroids := append(more_asteroids, asteroid->explode())
             allegro_play_sample(asteroidExplodeSound)
+            explodes := makeLargeExplode(asteroid.x, asteroid.y) :: explodes
           }
           bullet->hit()
+          explodes := makeSmallExplode(bullet.x, bullet.y) :: explodes
           allegro_play_sample(bulletHitSound)
         }
       }
@@ -370,6 +458,22 @@ class SpriteManager(){
     ship
   }
 
+  getExplode(sprites, ticks){
+    if int(ticks) >= length(sprites) then {
+      false
+    } else {
+      sprites[int(ticks)]
+    }
+  }
+
+  getExplosionLarge(ticks){
+    getExplode(explode, ticks / 3)
+  }
+
+  getExplosionSmall(ticks){
+    getExplode(explodeSmall, ticks / 3)
+  }
+
   getAsteroidLarge(ticks){
     get(asteroidLarge, ticks / 4)
   }
@@ -414,6 +518,13 @@ run_game(queue){
     allegro_flip_display()
   }
 
+  var fpsTimer = allegro_create_timer(0.5)
+  allegro_register_event_source(queue, allegro_get_timer_event_source(fpsTimer))
+  allegro_start_timer(fpsTimer)
+
+  var fpsCount = 0
+  var lastTime = currentMilliseconds()
+
   logic(event){
     match event with
       (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
@@ -425,14 +536,23 @@ run_game(queue){
         }
       }
       (allegro_TimerEvent type source timestamp count error){
-        world->act(sprites)
-        need_redraw := true
+        // printf("Source ~a fps source ~a\n", source, fpsTimer)
+        if allegro_same_pointer(source, fpsTimer) then {
+          var now = currentMilliseconds()
+          // printf("Fps: ~a\n", fpsCount / ((now - lastTime) / 1000))
+          fpsCount := 0
+          lastTime := now
+        } else {
+          world->act(sprites)
+          need_redraw := true
+        }
       } else {
       }
   }
 
   while not done {
     when need_redraw and allegro_is_event_queue_empty(queue) then {
+      fpsCount := fpsCount + 1
       draw()
       need_redraw := false
     }

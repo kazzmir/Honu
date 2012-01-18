@@ -33,7 +33,7 @@ drawCenterRotated(bitmap, x, y, angle){
 }
 
 class Asteroid(x, y, size, angle, speed){
-  var life = 1
+  var life = size * 3
   var ticks = random(100)
   draw(sprites){
     // allegro_draw_bitmap(currentSprite(sprites), x, y, 0)
@@ -259,6 +259,9 @@ class World(player){
   var bullets = []
   // var stars = generateStars()
 
+  var asteroidExplodeSound = loadSound("data/sounds/explode.wav")
+  var bulletHitSound = loadSound("data/sounds/pop.wav")
+
   makeAsteroid(){
     new Asteroid(randomReal(0, screenWidth()), randomReal(0, screenHeight()), 3, randomReal(0, 360), randomReal(1, 3))
   }
@@ -300,8 +303,10 @@ class World(player){
           asteroid->hit()
           when asteroid.life = 0 then {
             more_asteroids := append(more_asteroids, asteroid->explode())
+            allegro_play_sample(asteroidExplodeSound)
           }
           bullet->hit()
+          allegro_play_sample(bulletHitSound)
         }
       }
     }

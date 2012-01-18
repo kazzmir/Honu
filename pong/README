@@ -9,3 +9,5 @@ Follow the directions in racket-allegro-5 and set it up. Then link it with raco.
 Then run pong.honu
 
   $ racket pong.honu
+
+![Pong](pong.png)

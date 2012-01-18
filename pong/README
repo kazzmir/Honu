@@ -10,4 +10,4 @@ Then run pong.honu
 
   $ racket pong.honu
 
-![Pong](pong.png)
+![Pong](https://github.com/kazzmir/Honu/blob/master/pong/pong.png)

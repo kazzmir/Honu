@@ -11,6 +11,10 @@ color(r, g, b){
 }
 
 var pi = 3.141592526
+  
+loadSound(path){
+  allegro_load_sample(path)
+}
 
 screenWidth(){
   allegro_get_display_width(allegro_get_current_display())
@@ -111,6 +115,8 @@ class Player(x, y, angle, speed, shots){
   var doShoot = false
   var size = 18
 
+  var shootSound = loadSound("data/sounds/laser.wav")
+
   drawShip(){
     var x1 = x + cos(angle * pi / 180) * size
     var y1 = y + sin(angle * pi / 180) * size
@@ -162,6 +168,7 @@ class Player(x, y, angle, speed, shots){
       // world->addBullet(x, y, angle, sqrt(dx * dx + dy * dy) + 1)
       world->addBullet(x + cos(angle * pi / 180) * size,
                        y + sin(angle * pi / 180) * size, angle, 5)
+      allegro_play_sample(shootSound)
       doShoot := false
     }
 
@@ -434,6 +441,7 @@ run_game(queue){
 main(){
   allegro_install_system()
  
+  allegro_setup_audio()
   allegro_init_primitives_addon()
   allegro_install_keyboard()
   allegro_init_image_addon()

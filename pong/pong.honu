@@ -24,7 +24,7 @@ class Pallet(x, y, height, width, speed, keyup, keydown, color){
       y := max
     }
 
-    if moving = 0 then {
+    if moving == 0 then {
       score := score + 0.3
     } else {
       score := score - 0.4
@@ -34,20 +34,20 @@ class Pallet(x, y, height, width, speed, keyup, keydown, color){
   handle_event(event){
     match event with
     (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
-      when type = 'KeyDown then {
-        when keycode = keyup then {
+      when type == 'KeyDown then {
+        when keycode == keyup then {
           moving := -1
         }
-        when keycode = keydown then {
+        when keycode == keydown then {
           moving := 1
         }
       }
 
-      when type = 'KeyUp and (keycode = keyup or keycode = keydown) then {
-          moving := 0
-        }
+      when type == 'KeyUp and (keycode == keyup or keycode == keydown) then {
+        moving := 0
       }
     }
+  }
 }
 
 # Sets the alpha component of a color to the given level
@@ -79,7 +79,7 @@ class Ball(x, y, speed, size, pallets, color){
   }
 
   right(){
-    if xdir = 0 then {
+    if xdir == 0 then {
       1
     } else {
       0
@@ -87,7 +87,7 @@ class Ball(x, y, speed, size, pallets, color){
   }
 
   up(){
-    if ydir = 0 then {
+    if ydir == 0 then {
       1
     } else {
       0
@@ -104,8 +104,8 @@ class Ball(x, y, speed, size, pallets, color){
 
     // printf("p.x ~a p.width ~a new_x ~a xdir ~a new_y ~a size ~a p.y ~a p.height ~a\n", p.x, p.width, new_x, xdir, new_y, size, p.y, p.height)
     // printf("p.width is ~a\n", p.width)
-    when ((new_x <= p.x + p.width and xdir = 0) or
-          (new_x + size >= p.x and xdir = 1)) and
+    when ((new_x <= p.x + p.width and xdir == 0) or
+          (new_x + size >= p.x and xdir == 1)) and
          new_y + size >= p.y and new_y <= p.y + p.height then {
 
         #We hit the pallet
@@ -191,7 +191,7 @@ run_main(){
 
   printf("Running!\n")
 
-  var stars = [new Star(random(width), random(height), 0, random(5) / 10 + 0.1): x <- 0 to 100]
+  var stars = [new Star(random(width), random(height), 0, random(5) / 10 + 0.1): x = 0 to 100]
 
   draw(){
     allegro_clear_to_color(allegro_map_rgb_f(0,0,0))
@@ -236,7 +236,7 @@ run_main(){
       }
       (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
         // printf("Pressed ~a\n", keycode)
-        if type = 'KeyChar and keycode = 'Escape then {
+        if type == 'KeyChar and keycode == 'Escape then {
           done := true
         } else {
           left_player->handle_event(event)

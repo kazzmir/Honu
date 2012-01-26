@@ -11,23 +11,23 @@ class Pallet(x, y, height, width, speed, keyup, keydown, color){
   }
 
   die(){
-    score := score - 100
+    score = score - 100
   }
 
   update(){
-    y := y + moving * speed
+    y = y + moving * speed
     when y < 0 then {
-      y := 0
+      y = 0
     }
     var max = allegro_get_display_height(allegro_get_current_display()) - height
     when y > max then {
-      y := max
+      y = max
     }
 
     if moving == 0 then {
-      score := score + 0.3
+      score = score + 0.3
     } else {
-      score := score - 0.4
+      score = score - 0.4
     }
   }
 
@@ -36,15 +36,15 @@ class Pallet(x, y, height, width, speed, keyup, keydown, color){
     (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
       when type == 'KeyDown then {
         when keycode == keyup then {
-          moving := -1
+          moving = -1
         }
         when keycode == keydown then {
-          moving := 1
+          moving = 1
         }
       }
 
       when type == 'KeyUp and (keycode == keyup or keycode == keydown) then {
-        moving := 0
+        moving = 0
       }
     }
   }
@@ -75,7 +75,7 @@ class Ball(x, y, speed, size, pallets, color){
   }
 
   reverseDirection(){
-    xdir := 1 - xdir
+    xdir = 1 - xdir
   }
 
   right(){
@@ -95,8 +95,8 @@ class Ball(x, y, speed, size, pallets, color){
   }
 
   update(){
-    last_x := x
-    last_y := y
+    last_x = x
+    last_y = y
 
     var new_x = x + (xdir - right()) * speed
     var new_y = y + (up() - ydir) * speed
@@ -109,23 +109,23 @@ class Ball(x, y, speed, size, pallets, color){
          new_y + size >= p.y and new_y <= p.y + p.height then {
 
         #We hit the pallet
-        xdir := (xdir + 1) % 2
-        new_x := x #Reset the x value
-        speed := speed + 0.3 #Increase the difficulty
+        xdir = (xdir + 1) % 2
+        new_x = x #Reset the x value
+        speed = speed + 0.3 #Increase the difficulty
     }
 
     when new_y < 0 or new_y + size > allegro_get_display_height(allegro_get_current_display()) then {
         #We hit a wall
-        ydir := (ydir + 1) % 2
-        new_y := y #Reset the y value
+        ydir = (ydir + 1) % 2
+        new_y = y #Reset the y value
     }
 
-    x := new_x
-    y := new_y
+    x = new_x
+    y = new_y
   }
 
   setX(what){
-    x := what 
+    x = what 
   }
 }
 
@@ -135,10 +135,10 @@ class Star(x, y, angle, speed){
   }
 
   update(){
-    x := x + cos(angle) * speed
-    y := y + sin(angle) * speed
+    x = x + cos(angle) * speed
+    y = y + sin(angle) * speed
     when x > allegro_get_display_width(allegro_get_current_display()) then {
-      x := 0
+      x = 0
     }
   }
 }
@@ -229,15 +229,15 @@ run_main(){
             when ball.x > width then right_player->die()
             ball->setX(width / 2)
             ball->reverseDirection()
-            // finished := true
+            // finished = true
             // allegro_stop_timer(timer)
         }
-        need_redraw := true
+        need_redraw = true
       }
       (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
         // printf("Pressed ~a\n", keycode)
         if type == 'KeyChar and keycode == 'Escape then {
-          done := true
+          done = true
         } else {
           left_player->handle_event(event)
           right_player->handle_event(event)
@@ -251,7 +251,7 @@ run_main(){
   while not done {
     when need_redraw and allegro_is_event_queue_empty(queue) then {
       draw()
-      need_redraw := false
+      need_redraw = false
     }
 
     logic(allegro_wait_for_event(queue))

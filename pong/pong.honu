@@ -16,15 +16,15 @@ class Pallet(x, y, height, width, speed, keyup, keydown, color){
 
   update(){
     y = y + moving * speed
-    when y < 0 then {
+    when (y < 0){
       y = 0
     }
     var max = allegro_get_display_height(allegro_get_current_display()) - height
-    when y > max then {
+    when (y > max){
       y = max
     }
 
-    if moving == 0 then {
+    if (moving == 0){
       score = score + 0.3
     } else {
       score = score - 0.4
@@ -34,16 +34,16 @@ class Pallet(x, y, height, width, speed, keyup, keydown, color){
   handle_event(event){
     match event with
     (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
-      when type == 'KeyDown then {
-        when keycode == keyup then {
+      when (type == 'KeyDown){
+        when (keycode == keyup){
           moving = -1
         }
-        when keycode == keydown then {
+        when (keycode == keydown){
           moving = 1
         }
       }
 
-      when type == 'KeyUp and (keycode == keyup or keycode == keydown) then {
+      when (type == 'KeyUp and (keycode == keyup or keycode == keydown)){
         moving = 0
       }
     }
@@ -53,7 +53,7 @@ class Pallet(x, y, height, width, speed, keyup, keydown, color){
 # Sets the alpha component of a color to the given level
 # Allegro uses pre-multiplied alpha by default so we have to
 # multiply all colors by the alpha level
-alpha(color, level){
+function alpha(color, level){
   var red, green, blue = allegro_unmap_rgb_f(color)
   allegro_map_rgba_f(red * level, green * level, blue * level, level)
 }
@@ -79,7 +79,7 @@ class Ball(x, y, speed, size, pallets, color){
   }
 
   right(){
-    if xdir == 0 then {
+    if (xdir == 0){
       1
     } else {
       0
@@ -87,7 +87,7 @@ class Ball(x, y, speed, size, pallets, color){
   }
 
   up(){
-    if ydir == 0 then {
+    if (ydir == 0){
       1
     } else {
       0
@@ -104,9 +104,9 @@ class Ball(x, y, speed, size, pallets, color){
 
     // printf("p.x ~a p.width ~a new_x ~a xdir ~a new_y ~a size ~a p.y ~a p.height ~a\n", p.x, p.width, new_x, xdir, new_y, size, p.y, p.height)
     // printf("p.width is ~a\n", p.width)
-    when ((new_x <= p.x + p.width and xdir == 0) or
+    when (((new_x <= p.x + p.width and xdir == 0) or
           (new_x + size >= p.x and xdir == 1)) and
-         new_y + size >= p.y and new_y <= p.y + p.height then {
+         new_y + size >= p.y and new_y <= p.y + p.height){
 
         #We hit the pallet
         xdir = (xdir + 1) % 2
@@ -114,7 +114,7 @@ class Ball(x, y, speed, size, pallets, color){
         speed = speed + 0.3 #Increase the difficulty
     }
 
-    when new_y < 0 or new_y + size > allegro_get_display_height(allegro_get_current_display()) then {
+    when (new_y < 0 or new_y + size > allegro_get_display_height(allegro_get_current_display())){
         #We hit a wall
         ydir = (ydir + 1) % 2
         new_y = y #Reset the y value
@@ -137,17 +137,17 @@ class Star(x, y, angle, speed){
   update(){
     x = x + cos(angle) * speed
     y = y + sin(angle) * speed
-    when x > allegro_get_display_width(allegro_get_current_display()) then {
+    when (x > allegro_get_display_width(allegro_get_current_display())){
       x = 0
     }
   }
 }
 
-twoPlaces(x){
+function twoPlaces(x){
   integer(x * 100) / 100.0 + 0.0
 }
 
-run_main(){
+function run_main(){
   printf("Start main\n")
   allegro_install_system()
  
@@ -193,7 +193,7 @@ run_main(){
 
   var stars = [new Star(random(width), random(height), 0, random(5) / 10 + 0.1): x = 0 to 100]
 
-  draw(){
+  function draw(){
     allegro_clear_to_color(allegro_map_rgb_f(0,0,0))
     for star in stars do {
       star->draw()
@@ -201,7 +201,7 @@ run_main(){
     left_player->draw()
     right_player->draw()
     ball->draw()
-    if not finished then {
+    if (not finished){
         allegro_draw_text(font, allegro_map_rgb_f(1,1,1), width/2, 10, 'AlignCenter, "Player 1: use W and X to move, Player 2: use the up and down arrow keys.")
         allegro_draw_text(font, allegro_map_rgb_f(1, 1, 1), 1, height - 20, 'AlignLeft, format("Score: ~a", twoPlaces(left_player.score)))
         allegro_draw_text(font, allegro_map_rgb_f(1, 1, 1), width - 10, height - 20, 'AlignRight, format("Score: ~a", twoPlaces(right_player.score)))
@@ -215,7 +215,7 @@ run_main(){
   # When true the game will end
   var done = false
 
-  logic(event){
+  function logic(event){
     match event with
       (allegro_TimerEvent type source timestamp count error){
         left_player->update()
@@ -224,9 +224,9 @@ run_main(){
         for star in stars do {
           star->update()
         }
-        when ball.x + ball.size < 0 or ball.x > width then {
-            when ball.x + ball.size < 0 then left_player->die()
-            when ball.x > width then right_player->die()
+        when (ball.x + ball.size < 0 or ball.x > width){
+            when (ball.x + ball.size < 0) left_player->die()
+            when (ball.x > width) right_player->die()
             ball->setX(width / 2)
             ball->reverseDirection()
             // finished = true
@@ -236,7 +236,7 @@ run_main(){
       }
       (allegro_KeyboardEvent type source timestamp display keycode unicode modifiers repeat){
         // printf("Pressed ~a\n", keycode)
-        if type == 'KeyChar and keycode == 'Escape then {
+        if (type == 'KeyChar and keycode == 'Escape){
           done = true
         } else {
           left_player->handle_event(event)
@@ -249,7 +249,7 @@ run_main(){
   }
 
   while not done {
-    when need_redraw and allegro_is_event_queue_empty(queue) then {
+    when (need_redraw and allegro_is_event_queue_empty(queue)){
       draw()
       need_redraw = false
     }

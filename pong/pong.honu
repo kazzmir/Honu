@@ -260,4 +260,4 @@ function run_main(){
   allegro_uninstall_system()
 }
 
-run_main()
+allegro_run(run_main)

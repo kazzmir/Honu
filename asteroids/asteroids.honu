@@ -699,4 +699,4 @@ function main(){
   allegro_uninstall_system()
 }
 
-main()
+allegro_run(main)

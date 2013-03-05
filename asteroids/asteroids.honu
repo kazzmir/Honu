@@ -679,7 +679,7 @@ function main(){
   // with an alpha channel directly
   allegro_set_blender('Add, 'Alpha, 'InverseAlpha)
 
-  var FPS = 40
+  var FPS = 60
   var width = 800
   var height = 600
   

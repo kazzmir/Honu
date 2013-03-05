@@ -170,7 +170,7 @@ function run_main(){
 
   var finished = false
   var need_redraw = true
-  var FPS = 40
+  var FPS = 60
   var pallet_w = 20
   var pallet_h = 80
   var pallet_speed = 5
